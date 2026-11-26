@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
 
     steps:
       - name: Checkout repository
@@ -30,7 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Setup Java 17 (Temurin)
         uses: actions/setup-java@v4
@@ -42,7 +43,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Typecheck & Unit Tests
         run: |
@@ -85,7 +86,7 @@ jobs:
           retention-days: 30
 
       - name: Build Signed Release APK / AAB (when Signing Secrets exist)
-        if: ${{ (inputs.build_type == 'release-apk' || inputs.build_type == 'release-aab' || startsWith(github.ref, 'refs/tags/v')) && secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ (inputs.build_type == 'release-apk' || inputs.build_type == 'release-aab' || startsWith(github.ref, 'refs/tags/v')) && env.HAS_KEYSTORE == 'true' }}
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -109,7 +110,7 @@ jobs:
           rm -f release-keystore.jks
 
       - name: Upload Signed Release Artifact
-        if: ${{ (inputs.build_type == 'release-apk' || inputs.build_type == 'release-aab' || startsWith(github.ref, 'refs/tags/v')) && secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ (inputs.build_type == 'release-apk' || inputs.build_type == 'release-aab' || startsWith(github.ref, 'refs/tags/v')) && env.HAS_KEYSTORE == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: pdf-studio-signed-release
