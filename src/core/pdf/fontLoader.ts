@@ -28,8 +28,9 @@ async function fetchFontBytes(relativeUrl: string): Promise<Uint8Array> {
   }
 
   // في بيئة اختبارات Node / Vitest
-  const fs = await import('node:fs/promises');
-  const path = await import('node:path');
+  // webpackIgnore: يمنع webpack من محاولة تضمين وحدات node: في حزمة المتصفح (هذا المسار للاختبارات فقط)
+  const fs = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'node:fs/promises');
+  const path = await import(/* webpackIgnore: true */ /* @vite-ignore */ 'node:path');
   const filePath = path.join(process.cwd(), 'public', relativeUrl.replace(/^\//, ''));
   const data = await fs.readFile(filePath);
   return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);

@@ -1,6 +1,2 @@
-Added:
-  scripts/copy-pdf-worker.mjs
 Modified:
-  package.json
-  .gitignore
-  src/core/pdf/thumbnails.ts
+  src/core/pdf/fontLoader.ts
