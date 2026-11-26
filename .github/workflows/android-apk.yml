@@ -1,0 +1,118 @@
+name: Build Android APK (Capacitor)
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'نوع البناء المطلوب'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release-apk
+          - release-aab
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck & Unit Tests
+        run: |
+          npm run typecheck
+          npm test
+
+      - name: Build static web bundle (out/)
+        run: npm run build
+
+      - name: Generate & Configure Android Project (Phases 1–4)
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+          npm run android:configure
+          npm run android:configure-signing
+          npm run android:assets
+          chmod +x android/gradlew
+
+      - name: Build Debug APK
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_type == 'debug' }}
+        env:
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          cd android
+          ./gradlew assembleDebug
+          mkdir -p ../dist-apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../dist-apk/pdf-studio-debug.apk
+          sha256sum ../dist-apk/pdf-studio-debug.apk > ../dist-apk/pdf-studio-debug.apk.sha256
+
+      - name: Upload Debug APK Artifact
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.build_type == 'debug' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-studio-debug-apk
+          path: |
+            dist-apk/pdf-studio-debug.apk
+            dist-apk/pdf-studio-debug.apk.sha256
+          retention-days: 30
+
+      - name: Build Signed Release APK / AAB (when Signing Secrets exist)
+        if: ${{ (inputs.build_type == 'release-apk' || inputs.build_type == 'release-aab' || startsWith(github.ref, 'refs/tags/v')) && secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/release-keystore.jks
+          export ANDROID_KEYSTORE_PATH="$(pwd)/android/release-keystore.jks"
+          cd android
+          mkdir -p ../dist-apk
+          if [ "${{ inputs.build_type }}" = "release-aab" ]; then
+            ./gradlew bundleRelease
+            cp app/build/outputs/bundle/release/app-release.aab ../dist-apk/pdf-studio-release.aab
+            sha256sum ../dist-apk/pdf-studio-release.aab > ../dist-apk/pdf-studio-release.aab.sha256
+          else
+            ./gradlew assembleRelease
+            cp app/build/outputs/apk/release/app-release.apk ../dist-apk/pdf-studio-release.apk
+            sha256sum ../dist-apk/pdf-studio-release.apk > ../dist-apk/pdf-studio-release.apk.sha256
+          fi
+          rm -f release-keystore.jks
+
+      - name: Upload Signed Release Artifact
+        if: ${{ (inputs.build_type == 'release-apk' || inputs.build_type == 'release-aab' || startsWith(github.ref, 'refs/tags/v')) && secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-studio-signed-release
+          path: |
+            dist-apk/pdf-studio-release.*
+          retention-days: 90

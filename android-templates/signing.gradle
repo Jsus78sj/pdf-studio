@@ -1,0 +1,52 @@
+// إعدادات التوقيع والإصدار لتطبيق «محرر PDF المحلي»
+// تقرأ بيانات التوقيع بأمان من android/keystore.properties (محلياً) أو من متغيرات البيئة (CI/CD).
+
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def resolvedStoreFile = System.getenv("ANDROID_KEYSTORE_PATH") ?: keystoreProperties.getProperty("storeFile")
+def resolvedStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: keystoreProperties.getProperty("storePassword")
+def resolvedKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
+def resolvedKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
+
+def hasReleaseSigning = resolvedStoreFile && resolvedStorePassword && resolvedKeyAlias && resolvedKeyPassword
+
+android {
+    defaultConfig {
+        def envVersionCode = System.getenv("ANDROID_VERSION_CODE")
+        def envVersionName = System.getenv("ANDROID_VERSION_NAME")
+        if (envVersionCode) {
+            versionCode envVersionCode.toInteger()
+        }
+        if (envVersionName) {
+            versionName envVersionName
+        }
+    }
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile file(resolvedStoreFile)
+                storePassword resolvedStorePassword
+                keyAlias resolvedKeyAlias
+                keyPassword resolvedKeyPassword
+                v1SigningEnabled true
+                v2SigningEnabled true
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // إبقاء minifyEnabled معطلاً لضمان عدم حذف جسر JavascriptInterface الخاص بـ Capacitor وMainActivity
+            minifyEnabled false
+            shrinkResources false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}

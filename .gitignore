@@ -1,0 +1,23 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+playwright-report/
+test-results/
+test-samples/
+dist-apk/
+.env*.local
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+
+# Android / Capacitor build artifacts & private signing keys (NEVER commit keys!)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/keystore.properties
+android/capacitor-cordova-android-plugins/
+*.keystore
+*.jks

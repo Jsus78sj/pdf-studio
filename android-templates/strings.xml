@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">محرر PDF المحلي</string>
+    <string name="title_activity_main">محرر PDF المحلي</string>
+    <string name="package_name">com.pdfstudio.local</string>
+    <string name="custom_url_scheme">com.pdfstudio.local</string>
+</resources>
