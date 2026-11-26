@@ -93,7 +93,19 @@ export async function loadSourcePdf(
       colorTag,
     };
   } catch (err) {
-    throw classifyPdfError(err, file.name);
+    const classified = classifyPdfError(err, file.name);
+    // أي فشل غير مصنّف أثناء قراءة pdf-lib (مثل TypeError على ملف مبتور) يعني تلف بنية الملف
+    if (classified.code === 'UNKNOWN') {
+      throw new PdfProcessingError(
+        'CORRUPTED_PDF',
+        `تعذر قراءة "${file.name}"؛ يبدو أن بنية ملف PDF تالفة أو غير مكتملة.`,
+        {
+          fileName: file.name,
+          suggestion: 'جرّب إعادة حفظ الملف من قارئ PDF (طباعة إلى PDF) ثم أعد المحاولة.',
+        }
+      );
+    }
+    throw classified;
   }
 }
 

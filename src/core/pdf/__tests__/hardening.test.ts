@@ -37,7 +37,7 @@ describe('Phase 5 Hardening: Corrupted, Encrypted & Output Verification', () => 
 
   it('يرفض ملف PDF صالح البنية لكنه لا يحتوي على أي صفحات (0 pages)', async () => {
     const emptyDoc = await PDFDocument.create();
-    const bytes = await emptyDoc.save();
+    const bytes = await emptyDoc.save({ addDefaultPage: false });
     const zeroPageFile = new File([bytes.buffer as ArrayBuffer], 'zero.pdf', {
       type: 'application/pdf',
     });

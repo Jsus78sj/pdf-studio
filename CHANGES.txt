@@ -1,6 +1,4 @@
-Added:
-  .eslintrc.json
 Modified:
-  .github/workflows/ci.yml
-  .github/workflows/android-apk.yml
-(Phase 1-4 files are unchanged)
+  vitest.config.ts
+  src/core/pdf/engine.ts
+  src/core/pdf/__tests__/hardening.test.ts
