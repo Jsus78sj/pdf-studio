@@ -4,7 +4,10 @@
   "private": true,
   "description": "تطبيق ويب وأندرويد (APK) محلي لدمج وتعديل ملفات PDF بخصوصية كاملة ودون إنترنت",
   "scripts": {
+    "copy:pdf-worker": "node scripts/copy-pdf-worker.mjs",
+    "predev": "npm run copy:pdf-worker",
     "dev": "next dev",
+    "prebuild": "npm run copy:pdf-worker",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

@@ -74,10 +74,8 @@ async function getPdfJs(): Promise<PdfJsLib> {
 
   if (!pdfjsPromise) {
     pdfjsPromise = import('pdfjs-dist').then((pdfjsLib) => {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.mjs',
-        import.meta.url
-      ).toString();
+      // الـ Worker يُنسخ إلى public/ قبل البناء (scripts/copy-pdf-worker.mjs) كي لا يمرّ عبر webpack/SWC
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
       return pdfjsLib;
     });
   }

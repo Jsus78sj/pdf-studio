@@ -1,4 +1,6 @@
+Added:
+  scripts/copy-pdf-worker.mjs
 Modified:
-  vitest.config.ts
-  src/core/pdf/engine.ts
-  src/core/pdf/__tests__/hardening.test.ts
+  package.json
+  .gitignore
+  src/core/pdf/thumbnails.ts
